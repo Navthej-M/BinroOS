@@ -1,0 +1,6 @@
+-I./include/
+-m64
+-ffreestanding
+-mno-red-zone
+-fno-stack-protector
+--target=x86_64-unknown-none-elf

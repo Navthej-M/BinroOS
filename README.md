@@ -1,7 +1,11 @@
 # BinroOS-dev
 
+The MakeFile, by default, supports to emulate the OS using either QEMU or BOCHS.
+
+``` bash
+make emulate-qemu   # emulate using qemu
+make emulate-bochs  # emulate using bochs
+```
 
 This project depends on the following tools to do specific task:
 - Limine (`licenses/LIMINE.TXT`)
-
-I should also mention about QEMU and BOCHS here since those are the emulators I tested this with.

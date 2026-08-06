@@ -1,6 +1,6 @@
 # string.s
 #
-# This file provides some functions for string in libk which should be written 
+# This file provides some functions for string in libk which should be written
 # in Assembly itself for speed and control.
 
 .section .text

@@ -1,20 +1,13 @@
-/// @file
-/// @brief Helpers for casting diffrent types.
+#include <libk/core.h>
 
-#ifndef _KCAST_H
-#define _KCAST_H
+size_t libk_strlen(const char *str) {
+    size_t size = 0;
+    while (str[size++] != 0x00)
+        ;
 
-#include <libk/types.h>
+    return size;
+}
 
-/// @brief Will convert a 64-bit number into a string.
-///
-/// This function will convert a 64-bit number into a string and stores inside
-/// the buf with the null terminator in it at the end.
-///
-/// @param buf The buffer where string should be stored
-/// @param num The number to get converted into string
-///
-/// @return The size of the string.
 size_t libk_u64_to_str(char buf[], uint64_t num) {
     size_t idx = 0;
 
@@ -43,4 +36,19 @@ size_t libk_u64_to_str(char buf[], uint64_t num) {
     return idx;
 }
 
-#endif
+void *libk_memmove(void *dest, const void *src, size_t size) {
+    if (dest == src || size == 0) {
+        return dest;
+    }
+
+    if (dest < src) {
+        libk_memcpy(dest, src, size);
+    } else {
+        char *d = (char *)dest + size - 1;
+        const char *s = (const char *)src + size - 1;
+        while (size--) {
+            *d-- = *s--;
+        }
+    }
+    return dest;
+}

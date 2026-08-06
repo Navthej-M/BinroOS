@@ -63,7 +63,7 @@ static bool is_extented = false;
 
 // PRIVATE
 
-void keyboard_handler(interrupt_frames *intrupt) {
+void keyboard_handler(interrupt_frames *) {
     unsigned char raw = inb(KEYBOARD_DATA_PORT);
     keyboard_event_t *event = kget_active_keyboard_listener();
 
@@ -84,7 +84,7 @@ void keyboard_handler(interrupt_frames *intrupt) {
         scancode = ps2_set1_normal[clean_raw];
     }
 
-    if (scancode != KP_UNKNOWN && event != NULL) {
+    if (scancode != KP_UNKNOWN && event != nullptr) {
         event->scancode = scancode;
         event->is_release = is_release;
         event->is_in = !is_release;

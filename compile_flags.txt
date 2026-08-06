@@ -1,4 +1,5 @@
 -I./include/
+-std=c23
 -m64
 -ffreestanding
 -mno-red-zone

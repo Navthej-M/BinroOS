@@ -13,7 +13,7 @@
 /// @return The 8-bit data byte read from the port.
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
-    asm volatile("inb %1, %0" : "=a"(ret) : "d"(port));
+    __asm__ volatile("inb %1, %0" : "=a"(ret) : "d"(port));
     return ret;
 }
 
@@ -22,7 +22,7 @@ static inline uint8_t inb(uint16_t port) {
 /// @param port The 16-bit I/O port address to write to.
 /// @param val The 8-bit data byte to write to the port.
 static inline void outb(uint16_t port, uint8_t val) {
-    asm volatile("outb %0, %1" : : "a"(val), "d"(port));
+    __asm__ volatile("outb %0, %1" : : "a"(val), "d"(port));
 }
 
 #endif

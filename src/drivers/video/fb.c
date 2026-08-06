@@ -1,10 +1,10 @@
 #include <drivers/video/video.h>
 #include <kernel/kernel.h>
-#include <libk/kstring.h>
+#include <libk/core.h>
 #include <libk/types.h>
 
-static void *fb_physical = NULL;
-static void *fb_backbuffer = NULL;
+static void *fb_physical = nullptr;
+static void *fb_backbuffer = nullptr;
 
 static uint64_t fb_width = 0;
 static uint64_t fb_height = 0;

@@ -23,7 +23,7 @@ static inline void arch_enable_interupts(void) {
 }
 
 /// @brief Will halt the CPU
-static inline void arch_halt(void) { asm volatile("hlt"); }
+static inline void arch_halt(void) { __asm__ volatile("hlt"); }
 
 /// @brief Will hang the CPU by clering intrupts and halting forever.
 static inline void arch_hang(bool disable_interupts) {

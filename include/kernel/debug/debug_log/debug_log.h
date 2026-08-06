@@ -5,8 +5,12 @@
 #ifndef _DEBUG_LOG_H
 #define _DEBUG_LOG_H
 
+#include <drivers/video/cli/colors.h>
 #include <drivers/video/video.h>
 #include <libk/types.h>
+
+#define DEBUG_CONSOLE_DEFAULT_BG COLOR_CATPPUCCIN_MOCHA_BASE
+#define DEBUG_CONSOLE_DEFAULT_FG COLOR_CATPPUCCIN_MOCHA_LAVENDER
 
 /// @brief Holds the important details needed to print logs.
 typedef struct {
@@ -27,6 +31,26 @@ typedef struct {
 /// @brief Will initilize the details for the debug logs (the temporary minimal
 /// terminal-like environment)
 void kdebug_logs_init(void);
+
+/// @brief Will return CLI THEME background color.
+///
+/// @return The CLI THEME bg which is setted up using color_set_cli_theme_bg.
+uint32_t kdebug_theme_get_cli_theme_bg(void);
+
+/// @brief Will return CLI THEME fg color.
+///
+/// @return The CLI THEME fg which is setted up using color_set_cli_theme_fg.
+uint32_t kdebug_theme_get_cli_theme_fg(void);
+
+/// @brief Will set the CLI THEME bg to {color}
+///
+/// @param color The color to be setted as the theme bg.
+void kdebug_theme_set_cli_theme_bg(term_color_t color);
+
+/// @brief Will set the CLI THEME fg to {color}
+///
+/// @param color The color to be setted as the theme fg.
+void kdebug_theme_set_cli_theme_fg(term_color_t color);
 
 /// @brief Returns the debug_log_t used by the kernel.
 ///
@@ -66,19 +90,12 @@ void kdebug_printFAIL_msg(const char *msg);
 /// @brief A wrapper around kdebug_puts and kdebug_logs_console_clear (optional
 /// btw) to show the interrupt failed message.
 ///
-/// This is mostly used by the IDT which will prints the heading using this
-/// function and prints it's stuffs and do it's stuffs by itself (like hanging
-/// the CPU forever) during interrupts.
+/// This will just display KERNEL PANIC heading, and {title}. Then it's upto
+/// you. Print, hang, do whatever.
 ///
-/// You can also use this to print all details. Like, this is print a heading
-/// like KERNEL PANIC and all and then prints the "msg". So, either you can keep
-/// msg minimal (only the fault name, like "Page Fault") and print or do other
-/// stuffs by yourself (like how IDT does) or you can keep all the text in "msg"
-/// to display all message at once.
-///
-/// @param msg The massage and details of interrupt to display
+/// @param title The title for the kernel panic msg
 /// @param clear_screen If screen should be cleared before printing the PANIC.
-void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen);
+void kdebug_printKernelPanic_msg(const char *title, bool clear_screen);
 
 /// @brief Will scroll the screen lines_to_scroll times
 ///

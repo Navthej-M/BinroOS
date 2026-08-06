@@ -1,7 +1,7 @@
 /// @file
 /// @brief Just includes various C headers which dosent need LIBC at runtime,
 /// like, they only defines stuff. These provides various types and values, like
-/// NULL, bool, uintS, ...
+/// bool, uint, ...
 
 #ifndef _TYPES_H
 #define _TYPES_H

@@ -2,12 +2,14 @@
 #include <drivers/video/cli/font.h>
 #include <kernel/debug/debug_log/debug_log.h>
 #include <kernel/kernel.h>
-#include <libk/kstring.h>
-#include <stdint.h>
+#include <libk/core.h>
 
 static debug_log_t details;
 
 // PRIVATE
+
+static term_color_t CLI_THEME_COLOR_BG = DEBUG_CONSOLE_DEFAULT_BG;
+static term_color_t CLI_THEME_COLOR_FG = DEBUG_CONSOLE_DEFAULT_FG;
 
 static void apply_ansi_graphics(void) {
     static const term_color_t standard_fg[] = {
@@ -22,8 +24,8 @@ static void apply_ansi_graphics(void) {
         uint32_t code = details.ansi_args[i];
 
         if (code == 0) {
-            details.current_fg = color_get_cli_theme_fg();
-            details.current_bg = color_get_cli_theme_bg();
+            details.current_fg = kdebug_theme_get_cli_theme_fg();
+            details.current_bg = kdebug_theme_get_cli_theme_bg();
         }
         // Standard Colors (30-37 / 40-47)
         else if (code >= 30 && code <= 37) {
@@ -90,8 +92,20 @@ void kdebug_logs_init(void) {
     details.cursor_x = details.cursor_y = details.ansi_state =
         details.ansi_argc = 0;
 
-    details.current_fg = color_get_cli_theme_fg();
-    details.current_bg = color_get_cli_theme_bg();
+    details.current_fg = kdebug_theme_get_cli_theme_fg();
+    details.current_bg = kdebug_theme_get_cli_theme_bg();
+}
+
+uint32_t kdebug_theme_get_cli_theme_bg(void) { return CLI_THEME_COLOR_BG; }
+
+uint32_t kdebug_theme_get_cli_theme_fg(void) { return CLI_THEME_COLOR_FG; }
+
+void kdebug_theme_set_cli_theme_bg(term_color_t color) {
+    CLI_THEME_COLOR_BG = color;
+}
+
+void kdebug_theme_set_cli_theme_fg(term_color_t color) {
+    CLI_THEME_COLOR_FG = color;
 }
 
 debug_log_t kdebug_logs_get_details(void) { return details; }
@@ -248,18 +262,18 @@ void kdebug_printFAIL_msg(const char *msg) {
     kdebug_puts(full_msg, ip);
 }
 
-void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen) {
-    size_t msg_size = libk_strlen(msg);
+void kdebug_printKernelPanic_msg(const char *panic_title, bool clear_screen) {
+    size_t msg_size = libk_strlen(panic_title);
     size_t ip = 0;
 
     if (clear_screen) {
-        kdebug_logs_console_clear(color_get_cli_theme_bg(),
-                                  color_get_cli_theme_fg());
+        kdebug_logs_console_clear(kdebug_theme_get_cli_theme_bg(),
+                                  kdebug_theme_get_cli_theme_fg());
     } else {
         kdebug_putc('\n');
     }
 
-    const char title[] = "KERNEL PANIC: INTERRUPT FAILURE";
+    const char title[] = "KERNEL PANIC (DEBUG MODE)";
 
     char red[] = "\033[91m";
     char dred[] = "\033[31m";
@@ -275,13 +289,13 @@ void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen) {
         sizeof(lgrey) - 1                             // lgrey color for '-'
         + screen_pixels / DEFAULT_TERMINAL_FONT_WIDTH // for '-' in whole line
         + spaces_required                             // ' ' until title
-        + sizeof(red) - 1                             // red color for title
+        + sizeof(dred) - 1                            // dred color for title
         + sizeof(title) - 1                           // title
         + 1                                           // ' ' for the newline
         + sizeof(lgrey)                               // lgrey color for '-'
         + screen_pixels / DEFAULT_TERMINAL_FONT_WIDTH // for '-' in whole line
         + sizeof(dred) - 1                            // for the message
-        + msg_size                                    // message
+        + msg_size                                    // medssage
         + sizeof(reset) - 1                           // resetting the colors
         + 1                                           // for the finel newline
         + 1                                           // null terminator
@@ -304,9 +318,9 @@ void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen) {
         full_text[ip++] = ' ';
     }
 
-    // red
-    for (size_t i = 0; i < sizeof(red); ++i) {
-        full_text[ip++] = red[i];
+    // dred
+    for (size_t i = 0; i < sizeof(dred); ++i) {
+        full_text[ip++] = dred[i];
     }
 
     // title
@@ -328,8 +342,8 @@ void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen) {
     }
 
     // setting color for thhe msg
-    for (size_t i = 0; i < sizeof(dred); ++i) {
-        full_text[ip++] = dred[i];
+    for (size_t i = 0; i < sizeof(red); ++i) {
+        full_text[ip++] = red[i];
     }
 
     // newline
@@ -337,7 +351,7 @@ void kdebug_printINTERRUPT_FAILURE_msg(const char *msg, bool clear_screen) {
 
     // msg
     for (size_t i = 0; i < msg_size; ++i) {
-        full_text[ip++] = msg[i];
+        full_text[ip++] = panic_title[i];
     }
 
     // resetting color to normals
@@ -369,7 +383,7 @@ void kdebug_scroll(size_t lines_to_scroll) {
     size_t clear_bytes = bytes_per_line * lines_to_scroll;
     size_t clear_pixels = clear_bytes / 4;
 
-    libk_memset32(dst_clear, color_get_cli_theme_bg(), clear_pixels);
+    libk_memset32(dst_clear, kdebug_theme_get_cli_theme_bg(), clear_pixels);
 
     if (details.cursor_y >= DEFAULT_TERMINAL_FONT_HEIGHT * lines_to_scroll) {
         details.cursor_y -= DEFAULT_TERMINAL_FONT_HEIGHT * lines_to_scroll;

@@ -42,9 +42,6 @@ BOCHS_CONF  := $(CONFIG_DIR)/bochs/bochsrc.ini
 #
 # Uncomment the next line to enable Bochs debugging.
 # BOCHS_DEBUG = dbg
-#
-# Uncomment the next line to see logs of idt and all
-# EMU_DEBUG = -monitor stdio
 
 #
 # Smart Source Resolution
@@ -65,14 +62,14 @@ DEPS       := $(C_OBJS:.o=.d)
 #
 # Compiler & Linker Flags
 #
-CFLAGS := -I$(INCLUDE_DIR) $(C_OPTIMIZATION) -m64 -march=x86-64 -fno-pic -fno-pie \
+CFLAGS := -I$(INCLUDE_DIR) $(C_OPTIMIZATION) -std=c23 -m64 -march=x86-64 -fno-pic -fno-pie \
           -ffreestanding -fno-stack-protector -fno-stack-check \
           -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel \
           -Wall -Wextra -MMD -MP
 
 LDFLAGS := -m elf_x86_64 -static -nostdlib -no-pie -T linker.ld
 
-QEMU_FLAGS := $(EMU_DEBUG) -display gtk,zoom-to-fit=on,full-screen=on -M q35,accel=tcg -m 2G -cdrom $(TARGET_ISO) -boot d -cpu max -d guest_errors -device VGA,vgamem_mb=16
+QEMU_FLAGS  := $(QEMU_DEBUG) -display gtk,zoom-to-fit=on,full-screen=on -cdrom $(TARGET_ISO)
 BOCHS_FLAGS := -f $(BOCHS_CONF) -q $(BOCHS_DEBUG)
 
 AS_FLAGS := -Wall -Wextra -ffreestanding -c

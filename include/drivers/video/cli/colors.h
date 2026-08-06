@@ -6,66 +6,45 @@
 
 #include <libk/types.h>
 
-// clang-format off
 /// @brief Different of colors for the framebuffer.
 typedef enum : uint32_t {
-    COLOR_BLACK                 =                 0x000000,
-    COLOR_BLUE                  =                 0x0000AA,
-    COLOR_GREEN                 =                 0x00AA00,
-    COLOR_CYAN                  =                 0x00AAAA,
-    COLOR_RED                   =                 0xAA0000,
-    COLOR_MAGENTA               =                 0xAA00AA,
-    COLOR_BROWN                 =                 0xAA5500,
-    COLOR_LIGHT_GRAY            =                 0xAAAAAA,
-    COLOR_DARK_GRAY             =                 0x555555,
-    COLOR_LIGHT_BLUE            =                 0x5555FF,
-    COLOR_LIGHT_GREEN           =                 0x55FF55,
-    COLOR_LIGHT_CYAN            =                 0x55FFFF,
-    COLOR_LIGHT_RED             =                 0xFF5555,
-    COLOR_LIGHT_MAGENTA         =                 0xFF55FF,
-    COLOR_YELLOW                =                 0xFFFF55,
-    COLOR_WHITE                 =                 0xFFFFFF,
-    COLOR_CATPPUCCIN_BG         =                 0x11111B,
-    COLOR_ORANGE                =                 0xFF8500,
-    COLOR_PURPLE                =                 0x800080,
-    COLOR_PINK                  =                 0xFFC0CB,
-    COLOR_TEAL                  =                 0x008080,
-    COLOR_OLIVE                 =                 0x808000,
-    COLOR_NAVY                  =                 0x000080,
-    COLOR_MAROON                =                 0x800000,
-    COLOR_GOLD                  =                 0xFFD700,
-    COLOR_SILVER                =                 0xC0C0C0,
-    COLOR_LIME                  =                 0x00FF00,
-    COLOR_INDIGO                =                 0x4B0082,
-    COLOR_VIOLET                =                 0xEE82EE,
-    COLOR_SUCCESS               =                 0x2ECC71,
-    COLOR_WARNING               =                 0xF1C40F,
-    COLOR_ERROR                 =                 0xE74C3C,
-    COLOR_INFO                  =                 0x3498DB,
-    COLOR_CHARCOAL              =                 0x121212,
-    COLOR_SLATE                 =                 0x2C3E50,
-    COLOR_DIM_GRAY              =                 0x696969
+    COLOR_BLACK = 0x000000,
+    COLOR_BLUE = 0x0000AA,
+    COLOR_GREEN = 0x00AA00,
+    COLOR_CYAN = 0x00AAAA,
+    COLOR_RED = 0xAA0000,
+    COLOR_MAGENTA = 0xAA00AA,
+    COLOR_BROWN = 0xAA5500,
+    COLOR_LIGHT_GRAY = 0xAAAAAA,
+    COLOR_DARK_GRAY = 0x555555,
+    COLOR_LIGHT_BLUE = 0x5555FF,
+    COLOR_LIGHT_GREEN = 0x55FF55,
+    COLOR_LIGHT_CYAN = 0x55FFFF,
+    COLOR_LIGHT_RED = 0xFF5555,
+    COLOR_LIGHT_MAGENTA = 0xFF55FF,
+    COLOR_YELLOW = 0xFFFF55,
+    COLOR_WHITE = 0xFFFFFF,
+    COLOR_CATPPUCCIN_MOCHA_BASE = 0x11111B,
+    COLOR_CATPPUCCIN_MOCHA_LAVENDER = 0xB4BEFE,
+    COLOR_ORANGE = 0xFF8500,
+    COLOR_PURPLE = 0x800080,
+    COLOR_PINK = 0xFFC0CB,
+    COLOR_TEAL = 0x008080,
+    COLOR_OLIVE = 0x808000,
+    COLOR_NAVY = 0x000080,
+    COLOR_MAROON = 0x800000,
+    COLOR_GOLD = 0xFFD700,
+    COLOR_SILVER = 0xC0C0C0,
+    COLOR_LIME = 0x00FF00,
+    COLOR_INDIGO = 0x4B0082,
+    COLOR_VIOLET = 0xEE82EE,
+    COLOR_SUCCESS = 0x2ECC71,
+    COLOR_WARNING = 0xF1C40F,
+    COLOR_ERROR = 0xE74C3C,
+    COLOR_INFO = 0x3498DB,
+    COLOR_CHARCOAL = 0x121212,
+    COLOR_SLATE = 0x2C3E50,
+    COLOR_DIM_GRAY = 0x696969
 } term_color_t;
-// clang-format on
-
-/// @brief Will return CLI THEME background color.
-///
-/// @return The CLI THEME bg which is setted up using color_set_cli_theme_bg.
-uint32_t color_get_cli_theme_bg(void);
-
-/// @brief Will return CLI THEME fg color.
-///
-/// @return The CLI THEME fg which is setted up using color_set_cli_theme_fg.
-uint32_t color_get_cli_theme_fg(void);
-
-/// @brief Will set the CLI THEME bg to {color}
-///
-/// @param color The color to be setted as the theme bg.
-void color_set_cli_theme_bg(term_color_t color);
-
-/// @brief Will set the CLI THEME fg to {color}
-///
-/// @param color The color to be setted as the theme fg.
-void color_set_cli_theme_fg(term_color_t color);
 
 #endif

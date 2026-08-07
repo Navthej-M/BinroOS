@@ -78,7 +78,7 @@ void pmm_init(void) {
         arch_hang(true);
     }
 
-    // Finding the highest memory addr
+    // finding the highest memory addr
     uint64_t max_entry = 0;
     for (size_t i = 0; i < memmap->entry_count; ++i) {
         struct limine_memmap_entry *entry = memmap->entries[i];
@@ -89,11 +89,11 @@ void pmm_init(void) {
         }
     }
 
-    // Caluclating total pages (4kb each)
-    total_pages = max_entry / 4096;
+    // caluclating total pages (4kb each)
+    total_pages = max_entry / PAGE_SIZE;
     size_t bitmap_size = (total_pages + 7) / 8;
 
-    // Finding usable region to store bitmap
+    // finding usable region to store bitmap
     uint64_t bitmap_addr = 0;
     for (size_t i = 0; i < memmap->entry_count; ++i) {
         struct limine_memmap_entry *entry = memmap->entries[i];
@@ -110,14 +110,14 @@ void pmm_init(void) {
         arch_hang(true);
     }
 
-    // Allocating the bitmap
+    // allocating the bitmap
     bitmap = (uint8_t *)(bitmap_addr + hhdm->offset);
 
-    // Marking all pages are used
+    // marking all pages are used
     libk_memset(bitmap, 0xFF, bitmap_size);
     used_pages = total_pages;
 
-    // Marking usable pages as free
+    // marking usable pages as free
     for (size_t i = 0; i < memmap->entry_count; ++i) {
         struct limine_memmap_entry *entry = memmap->entries[i];
         if (!entry) {
@@ -129,8 +129,8 @@ void pmm_init(void) {
             continue;
         }
 
-        uint64_t start = (entry->base + 4095) / 4096;
-        uint64_t end = (entry->base + entry->length) / 4096;
+        uint64_t start = (entry->base + PAGE_SIZE - 1) / PAGE_SIZE;
+        uint64_t end = (entry->base + entry->length) / PAGE_SIZE;
 
         for (size_t j = start; j < end; ++j) {
             pmm_bitmap_clear(j);
@@ -138,9 +138,10 @@ void pmm_init(void) {
         }
     }
 
-    // Marking bitmap itself as used to prevent allocating itself
-    uint64_t bitmap_start_page = bitmap_addr / 4096;
-    uint64_t bitmap_end_page = (bitmap_addr + bitmap_size + 4095) / 4096;
+    // marking bitmap itself as used to prevent allocating itself
+    uint64_t bitmap_start_page = bitmap_addr / PAGE_SIZE;
+    uint64_t bitmap_end_page =
+        (bitmap_addr + bitmap_size + PAGE_SIZE - 1) / PAGE_SIZE;
 
     for (size_t j = bitmap_start_page; j < bitmap_end_page; ++j) {
         if (j < total_pages) {
@@ -159,7 +160,7 @@ void *pmm_pgalloc(void) {
             pmm_bitmap_set(i);
             ++used_pages;
 
-            return (void *)(i * 4096);
+            return (void *)(i * PAGE_SIZE);
         }
     }
 
@@ -171,7 +172,7 @@ void pmm_pgfree(void *addr) {
         return;
     }
 
-    uint64_t page = (uint64_t)addr / 4096;
+    uint64_t page = (uint64_t)addr / PAGE_SIZE;
     if (page >= total_pages) {
         return;
     }
@@ -205,7 +206,7 @@ void vmm_init(void) {
         arch_hang(true);
     }
 
-    // Stripping the 12 bits of cr3 cuz they contains caching and PCID flags,
+    // stripping the 12 bits of cr3 cuz they contains caching and PCID flags,
     // not the address
     pml4 = (pml4_entry_t *)((cr3 & ~0xFFF) + hhdm->offset);
 
@@ -251,7 +252,7 @@ void vmm_map_page(void *phys, void *virt, uint64_t flags) {
 
     pt[pt_idx] = paddr | flags | PAGE_PRESENT;
 
-    // Invalidating virtual addres (flushing the virtual addr from cache of the
+    // invalidating virtual addres (flushing the virtual addr from cache of the
     // CPU)
     __asm__ volatile("invlpg %0" : : "m"(*(char *)virt));
 }
@@ -289,7 +290,7 @@ void vmm_unmap_page(void *virt) {
 
     pt[pt_idx] = 0;
 
-    // Invalidating TLB
+    // invalidating TLB
     __asm__ volatile("invlpg %0" : : "m"(*(char *)virt));
 }
 

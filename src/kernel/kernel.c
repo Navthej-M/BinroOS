@@ -433,7 +433,7 @@ void *krealloc(void *ptr, size_t n) {
 
     if (block->magic != HEAP_MAGIC) {
         kernel_panic(KERNEL_PANIC_MODE_NORMAL,
-                     "Heap block magic number dosen't match", nullptr);
+                     "Heap block magic number not matching", nullptr);
         return nullptr;
     }
 

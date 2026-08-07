@@ -426,6 +426,16 @@ void *krealloc(void *ptr, size_t n) {
     }
 
     heap_block *block = (void *)((uint8_t *)ptr - sizeof(heap_block));
+    if (!block) {
+        kernel_panic(KERNEL_PANIC_MODE_NORMAL, "Invalid heap block", nullptr);
+        return nullptr;
+    }
+
+    if (block->magic != HEAP_MAGIC) {
+        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
+                     "Heap block magic number dosen't match", nullptr);
+        return nullptr;
+    }
 
     if (block->size == n) {
         return ptr;
@@ -435,7 +445,7 @@ void *krealloc(void *ptr, size_t n) {
     if (!new_heap) {
         kernel_panic(KERNEL_PANIC_MODE_NORMAL,
                      "Unable to allcate new heap to reallocate", nullptr);
-        arch_hang(true);
+        return nullptr;
     }
 
     libk_memcpy(new_heap, ptr, block->size);

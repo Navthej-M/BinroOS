@@ -1,5 +1,5 @@
-#include "drivers/keyboard/keyboard.h"
 #include <arch/irq.h>
+#include <drivers/keyboard/keyboard.h>
 #include <drivers/video/fb.h>
 #include <kernel/debug/debug_log/debug_log.h>
 #include <kernel/kernel.h>
@@ -418,6 +418,30 @@ void kfree(void *ptr) {
             curr = curr->next;
         }
     }
+}
+
+void *krealloc(void *ptr, size_t n) {
+    if (!ptr || n == 0) {
+        return nullptr;
+    }
+
+    heap_block *block = (void *)((uint8_t *)ptr - sizeof(heap_block));
+
+    if (block->size == n) {
+        return ptr;
+    }
+
+    void *new_heap = kmalloc(n);
+    if (!new_heap) {
+        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
+                     "Unable to allcate new heap to reallocate", nullptr);
+        arch_hang(true);
+    }
+
+    libk_memcpy(new_heap, ptr, block->size);
+    kfree(ptr);
+
+    return new_heap;
 }
 
 void kmain(void) {

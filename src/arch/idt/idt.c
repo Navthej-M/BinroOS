@@ -1,8 +1,27 @@
-#include <arch/gdt.h>
-#include <arch/idt.h>
-#include <arch/irq.h>
-#include <kernel/debug/debug_log/debug_log.h>
-#include <kernel/kernel.h>
+// Copyright 2026 Navthej
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "arch/idt.h"
+#include "arch/gdt.h"
+#include "arch/irq.h"
+#include "kernel/kernel.h"
 
 static idt_entry idt[IDT_ENTRIES];
 static idt_ptr ptr;
@@ -95,11 +114,11 @@ void isr0_handler(interrupt_frames *interrupt) {
     interrupt_fault("Divide by Zero", interrupt);
 }
 
-void isr1_handler(interrupt_frames *interrupt) { arch_hang(true); }
+void isr1_handler(interrupt_frames *) { arch_hang(true); }
 
-void isr2_handler(interrupt_frames *interrupt) { arch_hang(true); }
+void isr2_handler(interrupt_frames *) { arch_hang(true); }
 
-void isr3_handler(interrupt_frames *interrupt) { arch_hang(true); }
+void isr3_handler(interrupt_frames *) { arch_hang(true); }
 
 void isr4_handler(interrupt_frames *interrupt) {
     interrupt_fault("Overflow", interrupt);
@@ -145,9 +164,9 @@ void isr16_handler(interrupt_frames *interrupt) {
     interrupt_fault("X87 Floating Point Exception", interrupt);
 }
 
-void isr17_handler(interrupt_frames *interrupt) { arch_hang(true); }
+void isr17_handler(interrupt_frames *) { arch_hang(true); }
 
-void isr18_handler(interrupt_frames *interrupt) { arch_hang(true); }
+void isr18_handler(interrupt_frames *) { arch_hang(true); }
 
 void isr19_handler(interrupt_frames *interrupt) {
     interrupt_fault("SIMD Floating Point Exception", interrupt);

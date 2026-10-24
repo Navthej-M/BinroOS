@@ -1,12 +1,32 @@
+// Copyright 2026 Navthej
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 /// @file
 /// @brief Provides various functios by the kernel.
 
 #ifndef _KERNEL_H
 #define _KERNEL_H
 
-#include <arch/idt.h>
-#include <drivers/keyboard/keyboard.h>
-#include <drivers/video/video.h>
+#include "arch/idt.h"
+#include "drivers/keyboard/keyboard.h"
+#include "drivers/video/video.h"
 
 // version
 #define _STRINGFY_HELPER(x) #x
@@ -56,6 +76,9 @@ void kernel_panic(uint8_t mode, const char *title, interrupt_frames *frame);
 /// @return A pointer to the video details
 video_driver_t *kget_video_details(void);
 
+/// @return Pointer to the Backbuffer (initilized by kmain)
+void *kget_backbuffer(void);
+
 /// @brief Will set the active keyboard listner (keyboard_event_t).
 ///
 /// @param event: The event which is listening.
@@ -78,32 +101,6 @@ keyboard_event_t *kget_active_keyboard_listener(void);
 ///
 /// @return If some key is pressed and event got updated
 bool kpoll_event(keyboard_event_t *event);
-
-/// @brief Initilizes heap
-void kheap_init(void);
-
-/// @brief Allocate n bytes from the heap.
-///
-/// @param n bytes to allocate from the heap
-///
-/// @return Pointer to the alloacted address
-void *kmalloc(size_t n);
-
-/// @brief Free the allocated space from heap
-///
-/// @param ptr The pointer the allocated variable
-void kfree(void *ptr);
-
-/// @brief Reallocates ptr to n with keeping old content
-///
-/// @param ptr the allocated label
-/// @param size the new allocation size (byte)
-///
-/// @return Pointer to the new allocated address
-void *krealloc(void *ptr, size_t n);
-
-/// @brief Will initilize the core drivers and stuffs which _start hadn't.
-void kinit(void);
 
 /// @brief The kernel starting point which gets called after initlizing all.
 void kmain(void);

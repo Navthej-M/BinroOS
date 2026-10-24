@@ -1,3 +1,23 @@
+// Copyright 2026 Navthej
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 .section .data
 
 # selector constants
@@ -5,6 +25,7 @@
 .equ                GDT_KDATA, 0x10
 .equ                GDT_UCODE, 0x1B
 .equ                GDT_UDATA, 0x23
+.equ                GDT_TSS, 0x28
 
 .align 16
 gdt_start:                                          # GDT STARTS HERE
@@ -45,13 +66,14 @@ gdt_udata:                                          # User Data
 tss_start:
 .global gdt_tss
 gdt_tss:
-    .word       104                                 # Limit: A 64-bit TSS is exactly 104 bytes long
-    .word       0x0000                              # Base (Bits 0-15) -> Zeroed
-    .byte       0x00                                # Base (Bits 16-23) -> Zeroed
+    .word       103                                 # Limit: Size - 1 (104 - 1 = 103)
+    .word       0x0000                              # Base (Bits 0-15)
+    .byte       0x00                                # Base (Bits 16-23)
     .byte       0x89                                # Access: Present, Ring 0, Type: Available 64-bit TSS
-    .byte       0x00                                # Flags and Limit (Bits 16-19) -> Zeroed
-    .byte       0x00                                # Base (Bits 24-31) -> Zeroed
-    .quad       0x0000000000000000                  # Base (Bits 32-63) -> Zeroed
+    .byte       0x00                                # Flags and Limit (Bits 16-19)
+    .byte       0x00                                # Base (Bits 24-31)
+    .long       0x00000000                          # Base (Bits 32-63) -> Crucial: 32-bit field!
+    .long       0x00000000                          # Reserved -> Crucial: Must be zero!
 tss_end:
 
 gdt_end:                                            # GDT ENDS HERE
@@ -86,6 +108,9 @@ gdt_load:
     movw            %ax, %fs
     movw            %ax, %gs
     movw            %ax, %ss
+
+    movw            $GDT_TSS, %ax
+    ltr             %ax
 
     movq            %rbp, %rsp
     popq            %rbp

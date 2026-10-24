@@ -1,24 +1,38 @@
-#include <arch/irq.h>
-#include <drivers/keyboard/keyboard.h>
-#include <drivers/video/fb.h>
-#include <kernel/debug/debug_log/debug_log.h>
-#include <kernel/kernel.h>
-#include <kernel/mm/pmm.h>
-#include <kernel/mm/vmm.h>
-#include <libk/core.h>
+// Copyright 2026 Navthej
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-#define HEAP_MAGIC 0xC001BEEF
-#define LARGE_ALLOC_MAGIC 0xB16B100C
+#include "kernel/kernel.h"
+#include "arch/gdt.h"
+#include "arch/irq.h"
+#include "arch/tss.h"
+#include "boot/info.h"
+#include "drivers/keyboard/keyboard.h"
+#include "drivers/video/fb.h"
+#include "kernel/debug/debug_log/debug_log.h"
+#include "libk/core.h"
+#include <stdint.h>
 
-typedef struct heap_block {
-    size_t size;             // size of the usable memory
-    bool is_free;            // available?
-    uint32_t magic;          // magic number
-    struct heap_block *next; // next block to the heap
-} heap_block;
+// Backbuffer for VIDEO
+static void *backbuffer[2480 * 1980];
 
-heap_block *heap_head = nullptr; // heap head linked list starts here
-
+// for KEYBOARD SERVICES
 static keyboard_event_t *active_keyboard_event =
     &(keyboard_event_t){0}; // keyboard current listener
 static video_driver_t *kvideo_driver =
@@ -69,17 +83,10 @@ void kvideo_required(void *backbuffer, void *framebuffer, uint32_t screen_width,
 
 video_driver_t *kget_video_details(void) { return kvideo_driver; }
 
+void *kget_backbuffer(void) { return backbuffer; }
+
 void kinit(void) {
-    arch_enable_interupts();
-    kdebug_printDONE_msg("Intrupts enabled");
-
-    // keyboard event and the active keyboard listener
-    keyboard_init();
-    kdebug_printDONE_msg("Initilized keyboard driver");
-
-    keyboard_event_init(active_keyboard_event);
-    kset_active_keyboard_listener(active_keyboard_event);
-    kdebug_printDONE_msg("Setted up keyboard event");
+    // goiing to kernel main function
 }
 
 void kernel_panic(uint8_t mode, const char *title, interrupt_frames *frame) {
@@ -283,178 +290,49 @@ void kernel_panic(uint8_t mode, const char *title, interrupt_frames *frame) {
     }
 }
 
-void kheap_init(void) {
-    void *page = vmm_alloc_pages(1);
-    if (!page) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
-                     "Failed to allocate page for heap initilization", nullptr);
-        return;
-    }
-
-    heap_head = (heap_block *)page;
-
-    heap_head->size = PAGE_SIZE - sizeof(heap_block);
-    heap_head->is_free = true;
-    heap_head->magic = HEAP_MAGIC;
-    heap_head->next = nullptr;
-}
-
-void *kmalloc(size_t n) {
-    if (n == 0) {
-        return nullptr;
-    }
-
-    n = align_up(16, n);
-
-    heap_block *curr = heap_head;
-    heap_block *prv = nullptr;
-
-    // searching for a free block which is big enough
-    while (curr) {
-        if (curr->is_free && curr->size >= n) {
-            // if block is bigger than necessary, splitting (alteast 16 bits)
-            if (curr->size > n + sizeof(heap_block) + 16) {
-                heap_block *new_block =
-                    (heap_block *)((uint8_t *)curr + sizeof(heap_block) + n);
-
-                new_block->size = curr->size - n - sizeof(heap_block);
-                new_block->is_free = true;
-                new_block->magic = HEAP_MAGIC;
-                new_block->next = curr->next;
-
-                curr->next = new_block;
-                curr->size = n;
-            }
-
-            curr->is_free = false;
-            return (void *)((uint8_t *)curr + sizeof(heap_block));
-        }
-
-        prv = curr;
-        curr = curr->next;
-    }
-
-    // no existing block was big enough (creating new page from VMM)
-    size_t total_size = n + sizeof(heap_block);
-    size_t pages_needed = (total_size + PAGE_SIZE - 1) / PAGE_SIZE;
-
-    void *new_mem = vmm_alloc_pages(pages_needed);
-    if (!new_mem) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL, "Out of virtual memory",
-                     nullptr);
-        return nullptr;
-    }
-
-    heap_block *new_block = (heap_block *)new_mem;
-    new_block->size = (pages_needed * PAGE_SIZE) - sizeof(heap_block);
-    new_block->is_free = false;
-    new_block->magic = HEAP_MAGIC;
-    new_block->next = nullptr;
-
-    if (prv) {
-        prv->next = new_block;
-    } else {
-        heap_head = new_block;
-    }
-
-    return (void *)((uint8_t *)new_block + sizeof(heap_block));
-}
-
-void kfree(void *ptr) {
-    if (!ptr) {
-        return;
-    }
-
-    heap_block *block = (void *)((uint8_t *)ptr - sizeof(heap_block));
-    if (block->magic != HEAP_MAGIC) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
-                     "Heap Corruption detected on kfree", nullptr);
-        return;
-    }
-
-    block->is_free = true;
-
-    // merging multiple free blocks into one large ahh block
-    {
-        heap_block *curr = heap_head;
-        while (curr) {
-            if ((curr->is_free && curr->next && curr->next->is_free) &&
-                (curr->next->magic == HEAP_MAGIC) &&
-                // if the exact adderess of the following equals to the start of
-                // next block, they are touching each other
-                ((uint8_t *)curr + sizeof(heap_block) + curr->size ==
-                 (uint8_t *)curr->next)) {
-                curr->size += curr->next->size + sizeof(heap_block);
-                curr->next = curr->next->next;
-                continue;
-            }
-
-            curr = curr->next;
-        }
-    }
-
-    // releasing pages back to VMM
-    heap_block *curr = heap_head;
-    heap_block *prev = NULL;
-    while (curr) {
-        uintptr_t block_start = (uintptr_t)curr;
-        size_t total_bytes = sizeof(heap_block) + curr->size;
-
-        if ((block_start & 0xFFF) == 0 && (total_bytes % PAGE_SIZE) == 0 &&
-            curr->is_free && total_bytes >= PAGE_SIZE) {
-
-            if (prev) {
-                prev->next = curr->next;
-            } else {
-                heap_head = curr->next;
-            }
-
-            size_t pages = total_bytes / PAGE_SIZE;
-            vmm_free_pages((void *)block_start, pages);
-
-            curr = (prev) ? prev->next : heap_head;
-        } else {
-            prev = curr;
-            curr = curr->next;
-        }
-    }
-}
-
-void *krealloc(void *ptr, size_t n) {
-    if (!ptr || n == 0) {
-        return nullptr;
-    }
-
-    heap_block *block = (void *)((uint8_t *)ptr - sizeof(heap_block));
-    if (!block) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL, "Invalid heap block", nullptr);
-        return nullptr;
-    }
-
-    if (block->magic != HEAP_MAGIC) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
-                     "Heap block magic number not matching", nullptr);
-        return nullptr;
-    }
-
-    if (block->size == n) {
-        return ptr;
-    }
-
-    void *new_heap = kmalloc(n);
-    if (!new_heap) {
-        kernel_panic(KERNEL_PANIC_MODE_NORMAL,
-                     "Unable to allcate new heap to reallocate", nullptr);
-        return nullptr;
-    }
-
-    libk_memcpy(new_heap, ptr, block->size);
-    kfree(ptr);
-
-    return new_heap;
-}
-
 void kmain(void) {
-    kdebug_printDONE_msg("Reached to to kmain");
+    // initilizing GDT and IDT
+    gdt_load();
+    idt_init();
+
+    // Remapping PIC for keyboard
+    extern void pic_remap();
+    pic_remap();
+
+    // Setting up TSS
+    uint64_t kernel_tss_stack[4096]; // TODO: Make it heap allocated
+    uint64_t kernel_tss_stack_top = (uint64_t)kernel_tss_stack + 4096;
+    tss_init(kernel_tss_stack_top);
+
+    // Initilizing video
+    // TODO: backbuffer = allocate for width * height (now it's static, which is
+    // not GOOD)
+    kvideo_required(kget_backbuffer(), get_boot_info().video.framebuffer,
+                    get_boot_info().video.width, get_boot_info().video.height,
+                    get_boot_info().video.pitch);
+    fb_init();
+
+    // Initilizing console for logs
+    kdebug_logs_init();
+    kdebug_logs_console_clear(kdebug_theme_get_cli_theme_bg(),
+                              kdebug_theme_get_cli_theme_fg());
+    kdebug_printDONE_msg("Setted up console for logs");
+
+    // Enabling Intrupts for some drivers to work properly (and mainly, wtf is
+    // an OS with no intrrupts)
+    arch_enable_interupts();
+    kdebug_printDONE_msg("Intrupts enabled");
+
+    // Initilizing the keyboard driver and setting up the first active listener
+    // to keytboard intrrupts
+    keyboard_init();
+    kdebug_printDONE_msg("Initilized keyboard driver");
+
+    keyboard_event_init(active_keyboard_event);
+    kset_active_keyboard_listener(active_keyboard_event);
+    kdebug_printDONE_msg("Setted up keyboard event");
+
+    // Forever loop (tho never gonna reach here, for safty to not to CRASH by
+    // exiting this funtion)
     arch_hang(false);
 }

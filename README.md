@@ -1,6 +1,6 @@
 # BinroOS
 
-NOTE: Yet this project is at it's very basic -- simply, just boots up, able to show initilizing logs. Next, I wanna work with the Memory Manager
+NOTE: Yet this project is at it's very basic -- simply, just boots up, able to show initilizing logs. Next, I wanna work with the Memory Manager (I had previusly written a memory manager, but, it's kinda messy; wanna rewrite it)
 
 Binro is planning to be like UNIX (having syscalls and kinda similar), just to run most open project softwares without needing to make all from scratch.
 Named it after nothing.
